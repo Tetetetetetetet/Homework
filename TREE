@@ -1,0 +1,152 @@
+#include<iostream>
+//树的节点代表【集合】，边代表【关系】，根节点是【全集】
+//遍历：广度优先遍历（用队列）（又称层递遍历），深度优先遍历（用栈）（可找出节点间的父子关系）
+//二叉树：每个节点度最多为2 -->度为0的节点比度为2的节点多一个
+//完全二叉树：除最后一层都满且最后一层仅缺右侧节点；-->i节点的子节点编号为2i和2i+1->可以用连续空间存储（数组）
+//满二叉树：无度为1的节点
+//完美二叉树：每一层都满
+
+struct node
+{
+	int key, ltag, rtag;//tag==1说明为线索边，tag==0说明为实际边
+	node* lchild, * rchild;
+};
+node* getnewnode(int key)
+{
+	node* p = (node*)malloc(sizeof(node));
+	p->key = key;
+	p->lchild = p->rchild = NULL;
+	p->ltag = 0;
+	p->rtag = 0;
+	return p;
+}
+
+node* insert(node* root, int key)
+{
+	if (root == NULL)return getnewnode(key);
+	if (rand() % 2)root->lchild = insert(root->lchild, key);
+	else root->rchild = insert(root->rchild, key);
+	return root;//一开始忘了return了
+}
+int head = 0, tail = 0;
+node* queue[99999] = { NULL };
+void bfs(node* root)
+{
+	int head = 0, tail = 0;
+	node* n=root;
+	queue[tail++] = root;
+	while (head<tail)
+	{
+		std::cout << queue[head]->key << std::endl;
+		if (queue[head]->lchild)
+		{
+			queue[tail++] = queue[head]->lchild;
+			std::cout << "left: " << queue[head]->lchild->key << std::endl;
+		}
+		if (queue[head]->rchild)
+		{
+			queue[tail++] = queue[head]->rchild;
+			std::cout << "right: " << queue[head]->rchild->key << std::endl;;
+		}
+		
+		head++;
+}
+	int i = 0;
+	while (queue[i])
+	{
+		std:: cout << queue[i]->key << " ";
+		i++;
+	}
+	std::cout << std::endl;
+}
+int tim = 0;
+void dfs(node* root)
+{
+	if (root == NULL)return;
+	int start , end = 0;
+	tim++;
+	start = tim;
+	if (root->lchild)dfs(root->lchild);
+	if (root->rchild)dfs(root->rchild);
+	tim++;
+	end = tim;
+	std::cout << "Node: " << root->key << " [" << start << "," << end <<"]"<< std::endl;
+}
+void pre_order(node * root)
+{
+	if (root == NULL)return;
+	std::cout << root->key << " ";
+	if (root->ltag == 0)pre_order(root->lchild);
+	if (root->rtag == 0)pre_order(root->rchild);
+}
+void in_order(node* root)
+{
+	if (root == NULL)return;
+	if (root->ltag == 0)in_order(root->lchild);
+	std::cout << root->key << " ";
+	if (root->rtag == 0)in_order(root->rchild);
+}
+void post_order(node* root)
+{
+	if (root == NULL)return;
+	if (root->ltag == 0)post_order(root->lchild);
+	if (root->rtag == 0)post_order(root->rchild);
+	std::cout << root->key << " ";
+}
+node* prenode = NULL,*inorder_root=NULL;
+void _build_inorder_thread(node* root)
+{
+	if (root == NULL)return;
+	if(root->ltag==0)_build_inorder_thread(root->lchild);
+	if (root->lchild == NULL) { root->lchild = prenode; root->ltag = 1; }
+	if (inorder_root == NULL)inorder_root = root;//比我想的if(root->lchild==NULL)inorder_root=root；好
+	if (prenode && prenode->rchild == NULL) { prenode->rchild = root; prenode->rtag = 1; }
+		prenode = root;
+	if(root->rtag==0)_build_inorder_thread(root->rchild);
+	return;
+}
+void build_inorder_thread(node* root)
+{
+	_build_inorder_thread(root);
+	prenode->rchild = NULL;
+	prenode->rtag = 1;
+	return;
+}
+node* getnext(node* root)
+{
+	if (root->rtag == 1)return root->rchild;
+	root = root->rchild;
+	while (root->ltag == 0)root = root->lchild;
+	return root;
+}
+int main()
+{
+srand(time(0));
+node* rooot = getnewnode(rand() % 100);
+
+for (int i = 0; i < 10; i++)
+{
+	insert(rooot, rand() % 100);
+}
+bfs(rooot);
+dfs(rooot);
+std::cout << "前序遍历： ";
+pre_order(rooot);
+std::cout << std::endl;
+std::cout << "中序遍历 ";
+in_order(rooot);
+std::cout << std::endl;
+std::cout << "后序遍历 ";
+post_order(rooot);
+std::cout << std::endl;
+prenode = NULL;
+inorder_root = NULL;
+build_inorder_thread(rooot);
+node* n = inorder_root;
+std::cout << "链表式中序遍历： ";
+while (n)
+{
+	std::cout << n->key << " ";
+	n = getnext(n);
+}
+}
